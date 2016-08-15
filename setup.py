@@ -1,5 +1,5 @@
 import os
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 # Utility function to read the README file.
@@ -11,15 +11,15 @@ def read(fname):
 
 setup(
     name='django-rq-wrapper',
-    version='1.1',
+    version='1.2',
     author='ISL',
     author_email='dev@isl.co',
     description=('Django management command to run multiple rq workers in one command and autoreload.'),
     license='MIT',
     keywords='django rq autoreload worker',
     url='https://github.com/istrategylabs/django-rq-wrapper',
-    packages=['django_rq_wrapper', ],
-    long_description=read('README'),
+    packages=find_packages(),
+    long_description=read('README.md'),
     classifiers=[
         'Topic :: Utilities',
         'License :: OSI Approved :: MIT License',
