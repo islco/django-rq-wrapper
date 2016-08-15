@@ -8,6 +8,8 @@ This project builds off of [Django RQ](https://github.com/ui/django-rq). Instead
 
 ### Installation
 
+    pip install django-rq-wrapper
+
 Add ``django_rq_wrapper`` to your installed apps. Use the management command ``rqworkers``.
 
 ### Added command options:

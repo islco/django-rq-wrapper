@@ -26,3 +26,4 @@ newrelic.ini
 
 django_rq_wrapper/static/
 /django_rq_wrapper.egg-info
+/build

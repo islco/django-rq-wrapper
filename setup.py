@@ -11,7 +11,7 @@ def read(fname):
 
 setup(
     name='django-rq-wrapper',
-    version='1.0',
+    version='1.1',
     author='ISL',
     author_email='dev@isl.co',
     description=('Django management command to run multiple rq workers in one command and autoreload.'),
@@ -19,7 +19,7 @@ setup(
     keywords='django rq autoreload worker',
     url='https://github.com/istrategylabs/django-rq-wrapper',
     packages=['django_rq_wrapper', ],
-    long_description=read('README.md'),
+    long_description=read('README'),
     classifiers=[
         'Topic :: Utilities',
         'License :: OSI Approved :: MIT License',
