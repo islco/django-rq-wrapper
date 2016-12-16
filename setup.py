@@ -11,7 +11,7 @@ def read(fname):
 
 setup(
     name='django-rq-wrapper',
-    version='1.2',
+    version='1.3',
     author='ISL',
     author_email='dev@isl.co',
     description=('Django management command to run multiple rq workers in one command and autoreload.'),
