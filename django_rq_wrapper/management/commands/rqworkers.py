@@ -46,6 +46,8 @@ class Command(BaseCommand):
     args = '<queue queue ...>'
 
     def add_arguments(self, parser):
+        parser.add_argument('queues', nargs='*', type=str,
+                            help='The queues to work on, separated by space')
         parser.add_argument('--worker-class', action='store', dest='worker_class',
                             default='rq.Worker', help='RQ Worker class to use')
         parser.add_argument('--pid', action='store', dest='pid',
@@ -73,7 +75,7 @@ class Command(BaseCommand):
 
         if os.environ.get('RUN_MAIN') == 'true':
             try:
-                self.create_worker(*args, **options)
+                self.create_worker(*options.get('queues'), **options)
             except KeyboardInterrupt:
                 pass
         elif os.environ.get('RUN_RELOADER') == 'true':
@@ -95,7 +97,7 @@ class Command(BaseCommand):
                 workers.append(self.create_worker_process())
                 self.create_reloader(workers)
             else:
-                self.create_worker(*args, **options)
+                self.create_worker(*options.get('queues'), **options)
 
     def create_worker_process(self):
         args = [sys.executable] + ['-W%s' % o for o in sys.warnoptions] + sys.argv
