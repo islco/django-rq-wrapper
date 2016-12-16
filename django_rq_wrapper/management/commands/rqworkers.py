@@ -4,8 +4,11 @@ import importlib
 import logging
 import subprocess
 
+from distutils.version import LooseVersion
+
 from django.core.management.base import BaseCommand
 from django.utils.autoreload import reloader_thread
+from django.utils.version import get_version
 
 from django_rq.queues import get_queues
 from django_rq.workers import get_exception_handlers
@@ -46,8 +49,6 @@ class Command(BaseCommand):
     args = '<queue queue ...>'
 
     def add_arguments(self, parser):
-        parser.add_argument('queues', nargs='*', type=str,
-                            help='The queues to work on, separated by space')
         parser.add_argument('--worker-class', action='store', dest='worker_class',
                             default='rq.Worker', help='RQ Worker class to use')
         parser.add_argument('--pid', action='store', dest='pid',
@@ -66,7 +67,12 @@ class Command(BaseCommand):
         parser.add_argument('--autoreload', action='store', type=bool, dest='autoreload',
                             default=False, help='Enable autoreload of rqworkers for development')
 
+        if LooseVersion(get_version()) >= LooseVersion('1.10'):
+            parser.add_argument('args', nargs='*', type=str,
+                                help='The queues to work on, separated by space')
+
     def handle(self, *args, **options):
+        queues = args
 
         pid = options.get('pid')
         if pid:
@@ -75,7 +81,7 @@ class Command(BaseCommand):
 
         if os.environ.get('RUN_MAIN') == 'true':
             try:
-                self.create_worker(*options.get('queues'), **options)
+                self.create_worker(*queues, **options)
             except KeyboardInterrupt:
                 pass
         elif os.environ.get('RUN_RELOADER') == 'true':
@@ -97,7 +103,7 @@ class Command(BaseCommand):
                 workers.append(self.create_worker_process())
                 self.create_reloader(workers)
             else:
-                self.create_worker(*options.get('queues'), **options)
+                self.create_worker(*queues, **options)
 
     def create_worker_process(self):
         args = [sys.executable] + ['-W%s' % o for o in sys.warnoptions] + sys.argv
