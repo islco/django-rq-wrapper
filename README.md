@@ -24,7 +24,7 @@ is not set::
 If you would like to have your workers autoreload the same way django's runserver
 autoreloads, use the ``--autoreload`` flag::
 
-    python manage.py rqworkers high default low --autoreload True
+    python manage.py rqworkers high default low --autoreload
 
 ### Note for Heroku
 
