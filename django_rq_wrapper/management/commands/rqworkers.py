@@ -64,7 +64,7 @@ class Command(BaseCommand):
                             help='Default worker timeout to be used')
         parser.add_argument('--workers', '-w', action='store', type=int, dest='num_workers',
                             default=None, help='Number of workers to spawn, defaults to RQ_CONCURRENCY, or 1')
-        parser.add_argument('--autoreload', action='store_true', type=bool, dest='autoreload',
+        parser.add_argument('--autoreload', action='store_true', dest='autoreload',
                             default=False, help='Enable autoreload of rqworkers for development')
 
         if LooseVersion(get_version()) >= LooseVersion('1.10'):
