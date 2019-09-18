@@ -5,6 +5,7 @@ import os
 import sys
 import subprocess
 from distutils.version import LooseVersion
+from pathlib import Path
 
 import redis
 from rq import use_connection
@@ -59,8 +60,7 @@ class Command(BaseCommand):
 
         pid = options.get('pid')
         if pid:
-            with open(os.path.expanduser(pid), "w") as fp:
-                fp.write(str(os.getpid()))
+            Path(pid).expanduser().write_text(str(os.getpid()))
 
         if os.environ.get('RUN_MAIN') == 'true':
             try:
