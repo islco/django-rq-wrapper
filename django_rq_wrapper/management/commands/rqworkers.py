@@ -1,11 +1,11 @@
 import os
 import sys
 import importlib
-import logging
 import subprocess
-
 from distutils.version import LooseVersion
 
+from rq import use_connection
+from rq.worker import logger
 from django.core.management.base import BaseCommand
 from django.utils.autoreload import reloader_thread
 from django.utils.version import get_version
@@ -14,19 +14,6 @@ from django_rq.queues import get_queues
 from django_rq.workers import get_exception_handlers
 
 from redis.exceptions import ConnectionError
-from rq import use_connection
-from rq.utils import ColorizingStreamHandler
-
-
-# Setup logging for RQWorker if not already configured
-logger = logging.getLogger('rq.worker')
-if not logger.handlers:
-    logger.setLevel(logging.DEBUG)
-    formatter = logging.Formatter(fmt='%(asctime)s %(message)s',
-                                  datefmt='%H:%M:%S')
-    handler = ColorizingStreamHandler()
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
 
 
 # Copied from rq.utils
@@ -153,4 +140,4 @@ class Command(BaseCommand):
             use_connection(w.connection)
             w.work(burst=options.get('burst', False))
         except ConnectionError as e:
-            print(e)
+            logger.error(e)
