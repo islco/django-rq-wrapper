@@ -3,7 +3,6 @@
 
 import os
 import sys
-import importlib
 import subprocess
 from distutils.version import LooseVersion
 
@@ -12,7 +11,10 @@ from rq import use_connection
 from rq.utils import import_attribute
 from rq.worker import logger
 from django.core.management.base import BaseCommand
-from django.utils.autoreload import reloader_thread
+try:
+    from django.utils.autoreload import reloader_thread
+except ImportError:
+    from django.utils.autoreload import get_reloader as reloader_thread
 from django.utils.version import get_version
 from django_rq.queues import get_queues
 from django_rq.workers import get_exception_handlers
