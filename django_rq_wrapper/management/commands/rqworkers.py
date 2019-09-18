@@ -9,20 +9,13 @@ from distutils.version import LooseVersion
 
 import redis
 from rq import use_connection
+from rq.utils import import_attribute
 from rq.worker import logger
 from django.core.management.base import BaseCommand
 from django.utils.autoreload import reloader_thread
 from django.utils.version import get_version
 from django_rq.queues import get_queues
 from django_rq.workers import get_exception_handlers
-
-
-# Copied from rq.utils
-def import_attribute(name):
-    """Return an attribute from a dotted path name (e.g. "path.to.func")."""
-    module_name, attribute = name.rsplit('.', 1)
-    module = importlib.import_module(module_name)
-    return getattr(module, attribute)
 
 
 class Command(BaseCommand):
