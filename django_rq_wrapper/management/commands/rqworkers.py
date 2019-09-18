@@ -1,19 +1,20 @@
+"""rqworkers command for Django.
+"""
+
 import os
 import sys
 import importlib
 import subprocess
 from distutils.version import LooseVersion
 
+import redis
 from rq import use_connection
 from rq.worker import logger
 from django.core.management.base import BaseCommand
 from django.utils.autoreload import reloader_thread
 from django.utils.version import get_version
-
 from django_rq.queues import get_queues
 from django_rq.workers import get_exception_handlers
-
-from redis.exceptions import ConnectionError
 
 
 # Copied from rq.utils
@@ -139,5 +140,5 @@ class Command(BaseCommand):
             # without this, jobs using RQ's get_current_job() will fail
             use_connection(w.connection)
             w.work(burst=options.get('burst', False))
-        except ConnectionError as e:
-            logger.error(e)
+        except redis.exceptions.ConnectionError as err:
+            logger.error(err)
