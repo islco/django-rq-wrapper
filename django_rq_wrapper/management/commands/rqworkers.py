@@ -1,40 +1,24 @@
+"""rqworkers command for Django.
+"""
+
 import os
 import sys
-import importlib
-import logging
 import subprocess
-
 from distutils.version import LooseVersion
+from pathlib import Path
 
+import redis
+from rq import use_connection
+from rq.utils import import_attribute
+from rq.worker import logger
 from django.core.management.base import BaseCommand
-from django.utils.autoreload import reloader_thread
+try:
+    from django.utils.autoreload import reloader_thread
+except ImportError:
+    from django.utils.autoreload import get_reloader as reloader_thread
 from django.utils.version import get_version
-
 from django_rq.queues import get_queues
 from django_rq.workers import get_exception_handlers
-
-from redis.exceptions import ConnectionError
-from rq import use_connection
-from rq.utils import ColorizingStreamHandler
-
-
-# Setup logging for RQWorker if not already configured
-logger = logging.getLogger('rq.worker')
-if not logger.handlers:
-    logger.setLevel(logging.DEBUG)
-    formatter = logging.Formatter(fmt='%(asctime)s %(message)s',
-                                  datefmt='%H:%M:%S')
-    handler = ColorizingStreamHandler()
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
-
-
-# Copied from rq.utils
-def import_attribute(name):
-    """Return an attribute from a dotted path name (e.g. "path.to.func")."""
-    module_name, attribute = name.rsplit('.', 1)
-    module = importlib.import_module(module_name)
-    return getattr(module, attribute)
 
 
 class Command(BaseCommand):
@@ -63,7 +47,8 @@ class Command(BaseCommand):
                             dest='worker_ttl', default=420,
                             help='Default worker timeout to be used')
         parser.add_argument('--workers', '-w', action='store', type=int, dest='num_workers',
-                            default=None, help='Number of workers to spawn, defaults to RQ_CONCURRENCY, or 1')
+                            default=None,
+                            help='Number of workers to spawn, defaults to RQ_CONCURRENCY, or 1')
         parser.add_argument('--autoreload', action='store_true', dest='autoreload',
                             default=False, help='Enable autoreload of rqworkers for development')
 
@@ -76,8 +61,7 @@ class Command(BaseCommand):
 
         pid = options.get('pid')
         if pid:
-            with open(os.path.expanduser(pid), "w") as fp:
-                fp.write(str(os.getpid()))
+            Path(pid).expanduser().write_text(str(os.getpid()))
 
         if os.environ.get('RUN_MAIN') == 'true':
             try:
@@ -105,7 +89,10 @@ class Command(BaseCommand):
             else:
                 self.create_worker(*queues, **options)
 
-    def create_worker_process(self):
+    @staticmethod
+    def create_worker_process():
+        """Create a worker process.
+        """
         args = [sys.executable] + ['-W%s' % o for o in sys.warnoptions] + sys.argv
         if sys.platform == "win32":
             args = ['"%s"' % arg for arg in args]
@@ -113,7 +100,10 @@ class Command(BaseCommand):
         new_environ['RUN_MAIN'] = 'true'
         return subprocess.Popen(args, executable=sys.executable, env=new_environ)
 
-    def create_reloader(self, workers):
+    @classmethod
+    def create_reloader(cls, workers):
+        """Create a reloader.
+        """
         args = [sys.executable] + ['-W%s' % o for o in sys.warnoptions] + sys.argv
         if sys.platform == "win32":
             args = ['"%s"' % arg for arg in args]
@@ -128,19 +118,22 @@ class Command(BaseCommand):
             new_workers = []
             for worker in workers:
                 worker.terminate()
-                new_workers.append(self.create_worker_process())
-            self.create_reloader(new_workers)
+                new_workers.append(cls.create_worker_process())
+            cls.create_reloader(new_workers)
         else:
             for worker in workers:
                 worker.terminate()
             sys.exit(reloader.returncode)
 
-    def create_worker(self, *args, **options):
+    @staticmethod
+    def create_worker(*args, **options):
+        """Create a worker.
+        """
         try:
             # Instantiate a worker
             worker_class = import_attribute(options['worker_class'])
             queues = get_queues(*args, queue_class=import_attribute(options['queue_class']))
-            w = worker_class(
+            worker = worker_class(
                 queues,
                 connection=queues[0].connection,
                 name=options['name'],
@@ -150,7 +143,7 @@ class Command(BaseCommand):
 
             # Call use_connection to push the redis connection into LocalStack
             # without this, jobs using RQ's get_current_job() will fail
-            use_connection(w.connection)
-            w.work(burst=options.get('burst', False))
-        except ConnectionError as e:
-            print(e)
+            use_connection(worker.connection)
+            worker.work(burst=options.get('burst', False))
+        except redis.exceptions.ConnectionError as err:
+            logger.error(err)
